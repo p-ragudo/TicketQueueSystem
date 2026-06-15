@@ -23,8 +23,12 @@ public class TicketWindowWorker
     public async Task AcceptAndProcessTicketAsync(Ticket ticket)
     {
         await _hubContext.Clients.All.TicketProcessingStatus(
-            ticketId: ticket.Id,
-            processingMessage: "processing"
+            new TicketStatus
+            {
+                TicketId = ticket.Id,
+                WindowNumber = WindowNumber,
+                Status = TicketStatusStates.Processing.ToString()
+            }
         );
 
         IsAvailable = false;
@@ -32,8 +36,12 @@ public class TicketWindowWorker
 
         await Task.Delay(ticket.MillisToComplete);
         await _hubContext.Clients.All.TicketProcessingCompleteStatus(
-            ticketId: ticket.Id,
-            processingCompleteMessage: "done"
+            new TicketStatus
+            {
+                TicketId = ticket.Id,
+                WindowNumber = WindowNumber,
+                Status = TicketStatusStates.Done.ToString()
+            }
         );
         _logger.LogInformation($"\nWindow {WindowNumber}: Done processing ticket {ticket.Id}\n");
 

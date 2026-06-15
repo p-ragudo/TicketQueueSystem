@@ -8,7 +8,9 @@ type Ticket = {
 }
 
 type TicketStatus = {
-  id: string,
+  ticketId: string,
+  userId: string | null,
+  windowNumber: number,
   status: string
 }
 
@@ -21,13 +23,13 @@ function App() {
   useEffect(() => {
     if(!connection) return
 
-    connection.on("TicketProcessingStatus", (ticketId: string, processingMessage: string) => {
-      setTicketStatus(prev => [...prev, {id: ticketId, status: processingMessage}])
+    connection.on("TicketProcessingStatus", (ticketStatus: TicketStatus) => {
+      setTicketStatus(prev => [...prev, ticketStatus])
     })
 
-    connection.on("TicketProcessingCompleteStatus", (ticketId: string, processingCompleteMessage: string) => {
+    connection.on("TicketProcessingCompleteStatus", (ticketStatus: TicketStatus) => {
       setTicketStatus(prev =>{
-        return prev.map(t => t.id === ticketId ? {...t, status: processingCompleteMessage} : t)
+        return prev.map(t => t.ticketId === ticketStatus.ticketId ? {...t, status: ticketStatus.status} : t)
       })
     })
 
@@ -52,17 +54,16 @@ function App() {
     <>
       <button onClick={onRequestTicket}>Request ticket</button>
       <h3 className="text-2xl">Tickets</h3>
-      <div className="flex flex-col gap-2">
-        {tickets.map(ticket => {
-          return (
-              <div key={ticket.id}>
-                <p>{ticket.id}</p>
-                <p>seconds to complete: {ticket.millisToComplete / 1000}</p>
-                <p>Status: {ticketStatus.find(s => s.id === ticket.id)?.status || "In queue..."}</p>
-              </div>
-          )
-        })}
-      </div>
+      {tickets.map(ticket => {
+        return (
+            <div key={ticket.id} className="mb-10">
+              <p>{ticket.id}</p>
+              <p>seconds to complete: {ticket.millisToComplete / 1000}</p>
+              <p>Window Number assigned: {ticketStatus.find(s => s.ticketId === ticket.id)?.windowNumber || "Unassigned..."}</p>
+              <p>Status: {ticketStatus.find(s => s.ticketId === ticket.id)?.status || "In queue..."}</p>
+            </div>
+        )
+      })}
     </>
   )
 }
