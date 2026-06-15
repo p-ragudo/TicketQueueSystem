@@ -7,21 +7,28 @@ type Ticket = {
   millisToComplete: number
 }
 
+type TicketStatus = {
+  id: string,
+  status: string
+}
+
 function App() {
   const { connection, isConnected } = useSignalR();
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
-  const [processingState, setProcessingState] = useState("");
+  const [ticketStatus, setTicketStatus] = useState<TicketStatus[]>([]);
 
   useEffect(() => {
     if(!connection) return
 
-    connection.on("TicketProcessingStatus", (processingMessage: string) => {
-      setProcessingState(processingMessage)
+    connection.on("TicketProcessingStatus", (ticketId: string, processingMessage: string) => {
+      setTicketStatus(prev => [...prev, {id: ticketId, status: processingMessage}])
     })
 
-    connection.on("TicketProcessingCompleteStatus", (processingCompleteMessage: string) => {
-      setProcessingState(processingCompleteMessage)
+    connection.on("TicketProcessingCompleteStatus", (ticketId: string, processingCompleteMessage: string) => {
+      setTicketStatus(prev =>{
+        return prev.map(t => t.id === ticketId ? {...t, status: processingCompleteMessage} : t)
+      })
     })
 
     return () => {
@@ -51,7 +58,7 @@ function App() {
               <div key={ticket.id}>
                 <p>{ticket.id}</p>
                 <p>seconds to complete: {ticket.millisToComplete / 1000}</p>
-                <p>Status: {processingState}</p>
+                <p>Status: {ticketStatus.find(s => s.id === ticket.id)?.status || "In queue..."}</p>
               </div>
           )
         })}

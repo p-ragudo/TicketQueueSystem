@@ -7,7 +7,6 @@ public class TicketHandoffEngine : BackgroundService
 {
     private readonly QueueService _schedulerService;
     public List<TicketWindowWorker> TicketWindowWorkers {get; }
-    private readonly IHubContext<TicketStatusHub, ITicketStatusClient> _hubContext;
     private readonly ILogger<TicketHandoffEngine> _handoffEngineLogger;
     private readonly ILogger<TicketWindowWorker> _windowWorkerLogger;
 

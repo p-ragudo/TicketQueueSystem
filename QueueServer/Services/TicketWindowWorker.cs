@@ -22,13 +22,19 @@ public class TicketWindowWorker
 
     public async Task AcceptAndProcessTicketAsync(Ticket ticket)
     {
-        await _hubContext.Clients.All.TicketProcessingStatus($"Ticket {ticket.Id} is now processing!");
+        await _hubContext.Clients.All.TicketProcessingStatus(
+            ticketId: ticket.Id,
+            processingMessage: "processing"
+        );
 
         IsAvailable = false;
         CurrentTicket = ticket;
 
         await Task.Delay(ticket.MillisToComplete);
-        await _hubContext.Clients.All.TicketProcessingStatus($"Ticket {ticket.Id} processing done!");
+        await _hubContext.Clients.All.TicketProcessingCompleteStatus(
+            ticketId: ticket.Id,
+            processingCompleteMessage: "done"
+        );
         _logger.LogInformation($"\nWindow {WindowNumber}: Done processing ticket {ticket.Id}\n");
 
         IsAvailable = true;
