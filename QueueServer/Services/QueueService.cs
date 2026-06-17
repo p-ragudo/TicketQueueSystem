@@ -8,11 +8,11 @@ public class QueueService
 {
     public ConcurrentQueue<Ticket> Queue {get; } = new();
     private int _ticketCounter = 0;
-    public ILogger<TicketWindowWorker> _logger;
+    public ILogger<WindowWorkerService> _logger;
 
     public QueueService(ILoggerFactory logger)
     {
-        _logger = logger.CreateLogger<TicketWindowWorker>();
+        _logger = logger.CreateLogger<WindowWorkerService>();
     }
 
     private Ticket? CreateTicket()

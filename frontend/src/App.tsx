@@ -1,45 +1,63 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { useSignalR } from './context/SingalRContext'
+import Window from "./components/Window"
 
-type Ticket = {
+export type Ticket = {
   id: string,
-  millisToComplete: number
+  userId: string | null,
+  millisToComplete: number,
+  windowNumber: number | null,
+  status: string
 }
 
-type TicketStatus = {
-  ticketId: string,
-  userId: string | null,
+export type WindowWorker = {
   windowNumber: number,
-  status: string
+  isAvailable: boolean,
+  currentTicket: Ticket | null
 }
 
 function App() {
   const { connection, isConnected } = useSignalR();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [windowWorkerStatus, setWindowWorkerStatus] = useState<WindowWorker[]>([])
 
-  const [ticketStatus, setTicketStatus] = useState<TicketStatus[]>([]);
+  const windows = [1, 2, 3]
 
   useEffect(() => {
     if(!connection) return
 
-    connection.on("TicketProcessingStatus", (ticketStatus: TicketStatus) => {
-      setTicketStatus(prev => [...prev, ticketStatus])
-    })
+    connection.on("SendTransactionStatus", (ticket: Ticket, windowWorker: WindowWorker) => {
+      setTickets(prev => {
+        const exists = prev.some(t => t.id === ticket.id)
 
-    connection.on("TicketProcessingCompleteStatus", (ticketStatus: TicketStatus) => {
-      setTicketStatus(prev =>{
-        return prev.map(t => t.ticketId === ticketStatus.ticketId ? {...t, status: ticketStatus.status} : t)
+        if(exists) {
+          return prev.map(t => t.id === ticket.id ? {...t, status: ticket.status} : t)
+        }
+
+        return [...prev, ticket]
+      })
+
+      setWindowWorkerStatus(prev => {
+        const exists = prev.some(ww => ww.windowNumber === windowWorker.windowNumber)
+
+        if(exists) {
+          return prev.map(ww =>  
+            ww.windowNumber === windowWorker.windowNumber 
+            ? {...ww, isAvailable: windowWorker.isAvailable, currentTicket: null}
+            : ww)
+        }
+
+        return [...prev, windowWorker]
       })
     })
 
     return () => {
-      connection.off("TicketProcessingStatus")
-      connection.off("TicketProcessingCompleteStatus")
+      connection.off("SendTransactionStatus")
     }
   }, [connection])
 
-  const onRequestTicket = async () => {
+  const handleRequestTicket = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/tickets') 
       const newTicket: Ticket = await res.json()
@@ -50,18 +68,24 @@ function App() {
     }
   }
 
+  const mockTicket: Ticket = {
+    id: 'T-001',
+    userId: null,
+    windowNumber: 1,
+    status: 'Processing',
+    millisToComplete: 5000
+  }
+
   return (
     <>
-      <button onClick={onRequestTicket}>Request ticket</button>
-      <h3 className="text-2xl">Tickets</h3>
-      {tickets.map(ticket => {
+      <button onClick={handleRequestTicket}>Request Ticket</button>
+      {windowWorkerStatus.map(windowWorker => {
         return (
-            <div key={ticket.id} className="mb-10">
-              <p>{ticket.id}</p>
-              <p>seconds to complete: {ticket.millisToComplete / 1000}</p>
-              <p>Window Number assigned: {ticketStatus.find(s => s.ticketId === ticket.id)?.windowNumber || "Unassigned..."}</p>
-              <p>Status: {ticketStatus.find(s => s.ticketId === ticket.id)?.status || "In queue..."}</p>
-            </div>
+          <div>
+            {/* populate windows based on windowWorkerStatus
+            windows will also keep track of which ticket they are currently serving or they're free 
+            all states are managed by the server */}
+          </div>
         )
       })}
     </>

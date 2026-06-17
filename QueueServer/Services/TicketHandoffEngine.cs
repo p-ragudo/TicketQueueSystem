@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.SignalR;
 using QueueServer.Hubs;
+using QueueServer.Models;
 
 namespace QueueServer.Services;
 
 public class TicketHandoffEngine : BackgroundService
 {
     private readonly QueueService _schedulerService;
-    public List<TicketWindowWorker> TicketWindowWorkers {get; }
+    public List<WindowWorkerService> WindowWorkerServices {get; }
     private readonly ILogger<TicketHandoffEngine> _handoffEngineLogger;
-    private readonly ILogger<TicketWindowWorker> _windowWorkerLogger;
+    private readonly ILogger<WindowWorkerService> _windowWorkerLogger;
 
     public TicketHandoffEngine(
         QueueService schedulerService, 
@@ -18,12 +19,12 @@ public class TicketHandoffEngine : BackgroundService
     {
         _schedulerService = schedulerService;
         _handoffEngineLogger = handoffEngineLogger.CreateLogger<TicketHandoffEngine>();
-        _windowWorkerLogger = windowWorkerLogger.CreateLogger<TicketWindowWorker>();
+        _windowWorkerLogger = windowWorkerLogger.CreateLogger<WindowWorkerService>();
 
-        TicketWindowWorkers = [
-            new TicketWindowWorker(1, _windowWorkerLogger, hubContext),
-            new TicketWindowWorker(2, _windowWorkerLogger, hubContext),
-            new TicketWindowWorker(3, _windowWorkerLogger, hubContext)
+        WindowWorkerServices = [
+            new WindowWorkerService(WindowWorker.Create(windowNumber: 1), _windowWorkerLogger, hubContext),
+            new WindowWorkerService(WindowWorker.Create(windowNumber: 2), _windowWorkerLogger, hubContext),
+            new WindowWorkerService(WindowWorker.Create(windowNumber: 3), _windowWorkerLogger, hubContext)
         ];
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -37,18 +38,20 @@ public class TicketHandoffEngine : BackgroundService
                 continue;
             }
 
-            var freeWindowWorker = TicketWindowWorkers
-                .FirstOrDefault(w => w.IsAvailable && w.CurrentTicket == null);
+            var freeWindowWorkerService = WindowWorkerServices
+                .FirstOrDefault(ww => ww.WindowWorker.IsAvailable && ww.WindowWorker.CurrentTicket == null);
             
-            if(freeWindowWorker == null) { 
+            if(freeWindowWorkerService == null) { 
                 await Task.Delay(200, stoppingToken); 
                 continue;
             }
 
+            var freeWindowWorker = freeWindowWorkerService.WindowWorker;
+
             if(_schedulerService.Queue.TryDequeue(out var ticket))
             {
                 _handoffEngineLogger.LogInformation($"\nTicket {ticket.Id} handed off to {freeWindowWorker.WindowNumber}\n");
-                _ = freeWindowWorker.AcceptAndProcessTicketAsync(ticket);
+                _ = freeWindowWorkerService.AcceptAndProcessTicketAsync(ticket);
             }
         }
     }
