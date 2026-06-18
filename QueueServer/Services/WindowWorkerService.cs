@@ -35,17 +35,18 @@ public class WindowWorkerService
         };
 
         await _hubContext.Clients.All.SendTransactionStatus(transactionStatus);
+        _logger.LogInformation($"\nTicket {ticket.Id} handed off to Window {WindowWorker.WindowNumber}\n");
 
         await Task.Delay(ticket.MillisToComplete);
 
         // update ticket and window worker status before sending complete status
         transactionStatus.Ticket.Status = TicketStatus.Done.ToString();
+        transactionStatus.Ticket.WindowNumber = null;
 
         transactionStatus.WindowWorker.IsAvailable = WindowWorker.IsAvailable = true;
         transactionStatus.WindowWorker.CurrentTicket = WindowWorker.CurrentTicket = null;
 
         await _hubContext.Clients.All.SendTransactionStatus(transactionStatus);
-
         _logger.LogInformation($"\nWindow {WindowWorker.WindowNumber}: Done processing ticket {ticket.Id}\n");
     }
 }
