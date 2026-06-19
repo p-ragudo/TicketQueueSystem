@@ -40,7 +40,7 @@ app.MapGet("/api/tickets", async (
 {
     try
     {
-        Ticket? ticket = queueService.RequestTicket();
+        Ticket? ticket = await queueService.RequestTicket();
         ticket.UserId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return Results.Ok(ticket);

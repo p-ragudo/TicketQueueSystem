@@ -50,8 +50,10 @@ public class TicketHandoffEngine : BackgroundService
 
             if(_schedulerService.Queue.TryDequeue(out var ticket))
             {
-                _handoffEngineLogger.LogInformation($"\nTicket {ticket.Id} handed off to {freeWindowWorker.WindowNumber}\n");
                 _ = freeWindowWorkerService.AcceptAndProcessTicketAsync(ticket);
+                await _schedulerService.SendQueueStatus();
+
+                _handoffEngineLogger.LogInformation($"\nTicket {ticket.Id} handed off to {freeWindowWorker.WindowNumber}\n");
             }
         }
     }

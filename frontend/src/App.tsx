@@ -22,11 +22,20 @@ type TransactionStatusDto = {
   windowWorker: WindowWorker
 }
 
+type QueueInfoDto = {
+  queue: Ticket[],
+  totalWaiting: number
+}
+
 function App() {
   const windows = [1, 2, 3]
 
   const { connection } = useSignalR();
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [queue, setQueue] = useState<Ticket[]>([]);
+  const [totalWaiting, setTotalWaiting] = useState<number>(0)
+  const [completedTickets, updateCompletedTickets] = useState<Ticket[]>([])
   const [windowWorkers, setWindowWorkers] = useState<WindowWorker[]>(
     windows.map(num => ({
       windowNumber: num,
@@ -53,6 +62,14 @@ function App() {
         return [...prev, ticket]
       })
 
+      updateCompletedTickets(prev => {
+        if(ticket.status === "Done") {
+          return [...prev, ticket]
+        } else {
+          return prev
+        }
+      })
+
       setWindowWorkers(prev => {
         const exists = prev.some(ww => ww.windowNumber === windowWorker.windowNumber)
 
@@ -66,8 +83,16 @@ function App() {
       })
     })
 
+    connection.on("SendQueueStatus", (dto: QueueInfoDto) => {
+      const { queue, totalWaiting } = dto;
+
+      setQueue(queue)
+      setTotalWaiting(totalWaiting)
+    })
+
     return () => {
       connection.off("SendTransactionStatus")
+      connection.off("SendQueueStatus")
     }
   }, [connection])
 
@@ -109,22 +134,24 @@ function App() {
 
         <div>
           <p>Queue</p>
-          {tickets.map(ticket => ticket.status === "InQueue"
-            ? <div className='flex flex-row gap-5'>
-                <p>{ticket.id}: </p>
-                <p>{ticket.status}</p>
-              </div>
-            : <></>
-          )}
+          <p>Total Waiting: {totalWaiting}</p>
+          {queue.map(ticket => (
+            <div>
+              <p>{ticket.id}</p>
+              <p>{ticket.status}</p>
+            </div>
+          ))}
         </div>
 
         <div>
           <p>Done</p>
-          {tickets.map(ticket => ticket.status === "Done"
-            ? <p>{ticket.id}</p>
-            : <></>
-          )}
+          {completedTickets.map(ticket => (
+            <div>
+              <p>{ticket.id}</p>
+            </div>
+          ))}
         </div>
+
       </div>
     </>
   )

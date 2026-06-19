@@ -1,5 +1,9 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.SignalR;
 using QueueServer.Common;
+using QueueServer.Dtos;
+using QueueServer.Hubs;
 using QueueServer.Models;
 
 namespace QueueServer.Services;
@@ -8,91 +12,57 @@ public class QueueService
 {
     public ConcurrentQueue<Ticket> Queue {get; } = new();
     private int _ticketCounter = 0;
-    public ILogger<WindowWorkerService> _logger;
-
-    public QueueService(ILoggerFactory logger)
+    private readonly ILogger<WindowWorkerService> _logger;
+    private readonly IHubContext<TicketStatusHub, ITicketStatusClient> _hubContext;
+    private QueueInfoDto queueInfoDto = new();
+    public QueueService(ILoggerFactory logger, IHubContext<TicketStatusHub, ITicketStatusClient> hubContext)
     {
         _logger = logger.CreateLogger<WindowWorkerService>();
+        _hubContext = hubContext;
     }
 
-    private Ticket? CreateTicket()
+    private Ticket? CreateTicket(int secondsToComplete = 0)
     {
-        try
-        {
-            int nextId = Interlocked.Increment(ref _ticketCounter);
-            int secondsToComplete = Utils.GenerateRandomMiliseconds(3000, 8000, 1000);
+        int nextId = Interlocked.Increment(ref _ticketCounter);
+    
+        Ticket ticket = new() { 
+            Id = $"T-{nextId:D3}" ,
+            MillisToComplete = secondsToComplete == 0
+                ? Utils.GenerateRandomMiliseconds(3000, 8000, 1000)
+                : secondsToComplete
+        };
 
-            Ticket ticket = new() { 
-                Id = $"T-{nextId:D3}" ,
-                MillisToComplete = secondsToComplete
-            };
-
-            return ticket;
-        }
-        catch
-        {
-            throw new Exception();
-        }
-    }
-
-    private Ticket? CreateTicket(int secondsToComplete)
-    {
-        try
-        {
-            int nextId = Interlocked.Increment(ref _ticketCounter);
-
-            Ticket ticket = new() { 
-                Id = $"T-{nextId:D3}" ,
-                MillisToComplete = secondsToComplete
-            };
-
-            return ticket;
-        }
-        catch
-        {
-            throw new Exception();
-        }
+        return ticket;
     }
 
     private void AddTicketToQueue(Ticket ticket)
     {
-        try
-        {
-            Queue.Enqueue(ticket);  
-        }
-        catch
-        {
-            throw new Exception();
-        }
+        Queue.Enqueue(ticket);
     } 
 
-    public Ticket? RequestTicket()
+    public async Task<Ticket?> RequestTicket()
     {
-        try
-        {
-            Ticket? ticket = CreateTicket();
-            AddTicketToQueue(ticket);
+        Ticket? ticket = CreateTicket();
+        AddTicketToQueue(ticket);
 
-            return ticket;
-        }
-        catch
-        {
-            throw new Exception();
-        }
+        await SendQueueStatus();
+
+        return ticket;
     }
 
     public Ticket? RequestTicket(int secondsToComplete)
     {
-        try
-        {
-            Ticket? ticket = CreateTicket(secondsToComplete);
-            AddTicketToQueue(ticket);
+        Ticket? ticket = CreateTicket(secondsToComplete);
+        AddTicketToQueue(ticket);
 
-            return ticket;
-        }
-        catch
-        {
-            throw new Exception();
-        }
+        return ticket;
+    }
+
+    public async Task SendQueueStatus()
+    {
+        queueInfoDto.Queue = Queue.ToArray();
+        queueInfoDto.TotalWaiting = Queue.Count();
+
+        await _hubContext.Clients.All.SendQueueStatus(queueInfoDto);
     }
 }
