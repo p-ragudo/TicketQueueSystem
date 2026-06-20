@@ -43,7 +43,7 @@ function App() {
       currentTicket: null
     }))
   )
-
+  
   useEffect(() => {
     if(!connection) return
 
@@ -108,42 +108,46 @@ function App() {
   }
 
   return (
-    <>
-      <button 
-        onClick={handleRequestTicket}
-        className='mb-10'
-      >
-        Request Ticket
-      </button>
+    <div className='p-5 flex flex-col gap-10'>
+      <div className='flex justify-around'>
+        {windowWorkers.map(windowWorker => {
+          const ticket = windowWorker.currentTicket
 
-      <div className='w-full flex flex-row justify-around'>
-        <div>
-          {windowWorkers.map(windowWorker => {
-            const ticket = windowWorker.currentTicket
+          return (
+            <div key={windowWorker.windowNumber}>
+              <Window 
+                windowWorker={windowWorker} 
+                ticket={ticket ?? null} 
+              />
+            </div>
+          )
+        })}
+      </div>
 
-            return (
-              <div className='mb-20' key={windowWorker.windowNumber}>
-                <Window 
-                  windowWorker={windowWorker} 
-                  ticket={ticket ?? null} 
-                />
-              </div>
-            )
-          })}
-        </div>
+      <div className='w-full text-center'>
+        <button 
+          onClick={handleRequestTicket}
+          className='px-10 py-2'
+        >
+          Request Ticket
+        </button>
+      </div>
 
-        <div>
-          <p>Queue</p>
-          <p>Total Waiting: {totalWaiting}</p>
+      <div className='grid grid-cols-2 w-full justify-start'>
+        <div className='mr-2.5'>
+          <div className='flex w-full border-solid border-1 justify-around'>
+            <p>Queue</p>
+            <p>Total Waiting: {totalWaiting}</p>
+          </div>
           {queue.map(ticket => (
-            <div>
+            <div key={ticket.id}>
               <p>{ticket.id}</p>
               <p>{ticket.status}</p>
             </div>
           ))}
         </div>
 
-        <div>
+        <div className='border-solid border-1 ml-2.5'>
           <p>Done</p>
           {completedTickets.map(ticket => (
             <div>
@@ -151,9 +155,9 @@ function App() {
             </div>
           ))}
         </div>
-
       </div>
-    </>
+
+    </div>
   )
 }
 

@@ -6,17 +6,22 @@ interface WindowProp {
 }
 
 const Window = ({windowWorker, ticket}: WindowProp) => {
+  const borderColor = ticket === null ? 'border-green-500' : 'border-red-500'
+  const textColor = ticket === null ? 'text-green-500' : 'text-red-500'
+
   return (
-    <div>
-      <p>Window {windowWorker.windowNumber}</p>
-      {ticket ? (
-        <div>
-            <p>Ticket: {ticket.id}</p>
-            <p>Status: {ticket.status}</p>
-        </div>
-      ) : (
-        <p>Free</p>
-      )}
+    <div className={`border-solid border-1 ${borderColor} rounded-sm w-40 h-40 flex flex-col text-center`}>
+      <p className={`w-full mt-1 border-b-1 border-solid pb-1 ${textColor}`}>Window {windowWorker.windowNumber}</p>
+      <div className={`h-full content-center ${textColor}`}>
+        {ticket ? (
+          <div>
+              <p>Ticket: {ticket.id}</p>
+              <p>{ticket.status}</p>
+          </div>
+        ) : (
+          <p>Free</p>
+        )}
+      </div>
     </div>
   )
 }
