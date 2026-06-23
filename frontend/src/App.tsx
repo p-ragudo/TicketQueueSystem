@@ -27,12 +27,19 @@ type QueueInfoDto = {
   totalWaiting: number
 }
 
+type InitialProgramStatusDto = {
+  queue: Ticket[],
+  doneTickets: Ticket[],
+  windowWorkers: WindowWorker[],
+  totalWaiting: number
+}
+
 function App() {
+  const baseApiUrl = import.meta.env.VITE_API_URL
   const windows = [1, 2, 3]
 
   const { connection } = useSignalR();
 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [queue, setQueue] = useState<Ticket[]>([]);
   const [totalWaiting, setTotalWaiting] = useState<number>(0)
   const [completedTickets, updateCompletedTickets] = useState<Ticket[]>([])
@@ -49,18 +56,6 @@ function App() {
 
     connection.on("SendTransactionStatus", (dto: TransactionStatusDto) => {
       const { ticket, windowWorker } = dto
-
-      setTickets(prev => {
-        const exists = prev.some(t => t.id === ticket.id)
-
-        if(exists) {
-          return prev.map(t => t.id === ticket.id 
-            ? { ...ticket } 
-            : t)
-        }
-
-        return [...prev, ticket]
-      })
 
       updateCompletedTickets(prev => {
         if(ticket.status === "Done") {
@@ -84,24 +79,31 @@ function App() {
     })
 
     connection.on("SendQueueStatus", (dto: QueueInfoDto) => {
-      const { queue, totalWaiting } = dto;
+      const { queue, totalWaiting } = dto
 
       setQueue(queue)
+      setTotalWaiting(totalWaiting)
+    })
+
+    connection.on("SendInitialProgramStatus", (dto: InitialProgramStatusDto) => {
+      const { queue, doneTickets, windowWorkers, totalWaiting } = dto
+
+      setQueue(queue)
+      updateCompletedTickets(doneTickets)
+      setWindowWorkers(windowWorkers)
       setTotalWaiting(totalWaiting)
     })
 
     return () => {
       connection.off("SendTransactionStatus")
       connection.off("SendQueueStatus")
+      connection.off("SendInitialProgramStatus")
     }
   }, [connection])
 
   const handleRequestTicket = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/tickets') 
-      const newTicket: Ticket = await res.json()
-
-      setTickets(prev => [...prev, newTicket])
+      await fetch(`${baseApiUrl}/api/tickets`) 
     } catch(error) {
       console.error("Failed to request a ticket:", error)
     }
@@ -142,7 +144,6 @@ function App() {
           {queue.map(ticket => (
             <div key={ticket.id}>
               <p>{ticket.id}</p>
-              <p>{ticket.status}</p>
             </div>
           ))}
         </div>

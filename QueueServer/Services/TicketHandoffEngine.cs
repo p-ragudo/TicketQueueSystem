@@ -9,7 +9,7 @@ public class TicketHandoffEngine : BackgroundService
     private readonly QueueService _schedulerService;
     public List<WindowWorkerService> WindowWorkerServices {get; }
     private readonly ILogger<TicketHandoffEngine> _handoffEngineLogger;
-    private readonly ILogger<WindowWorkerService> _windowWorkerLogger;
+    public readonly ILogger<WindowWorkerService> _windowWorkerLogger;
 
     public TicketHandoffEngine(
         QueueService schedulerService, 
@@ -22,9 +22,9 @@ public class TicketHandoffEngine : BackgroundService
         _windowWorkerLogger = windowWorkerLogger.CreateLogger<WindowWorkerService>();
 
         WindowWorkerServices = [
-            new WindowWorkerService(WindowWorker.Create(windowNumber: 1), _windowWorkerLogger, hubContext),
-            new WindowWorkerService(WindowWorker.Create(windowNumber: 2), _windowWorkerLogger, hubContext),
-            new WindowWorkerService(WindowWorker.Create(windowNumber: 3), _windowWorkerLogger, hubContext)
+            new WindowWorkerService(WindowWorker.Create(windowNumber: 1), _windowWorkerLogger, hubContext, _schedulerService),
+            new WindowWorkerService(WindowWorker.Create(windowNumber: 2), _windowWorkerLogger, hubContext, _schedulerService),
+            new WindowWorkerService(WindowWorker.Create(windowNumber: 3), _windowWorkerLogger, hubContext, _schedulerService)
         ];
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

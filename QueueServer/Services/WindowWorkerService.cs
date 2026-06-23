@@ -11,12 +11,18 @@ public class WindowWorkerService
 
     private readonly ILogger<WindowWorkerService> _logger;
     private readonly IHubContext<TicketStatusHub, ITicketStatusClient> _hubContext;
+    private readonly QueueService _queueService;
 
-    public WindowWorkerService(WindowWorker windowWorker, ILogger<WindowWorkerService> logger, IHubContext<TicketStatusHub, ITicketStatusClient> hubContext)
+    public WindowWorkerService(
+        WindowWorker windowWorker, 
+        ILogger<WindowWorkerService> logger, 
+        IHubContext<TicketStatusHub, ITicketStatusClient> hubContext,
+        QueueService queueService)
     {
         WindowWorker = windowWorker;
         _logger = logger;
         _hubContext = hubContext;
+        _queueService = queueService;
     }
 
     public async Task AcceptAndProcessTicketAsync(Ticket ticket)
@@ -48,5 +54,6 @@ public class WindowWorkerService
 
         await _hubContext.Clients.All.SendTransactionStatus(transactionStatus);
         _logger.LogInformation($"\nWindow {WindowWorker.WindowNumber}: Done processing ticket {ticket.Id}\n");
+        _queueService.AddTicketToDoneList(ticket);
     }
 }

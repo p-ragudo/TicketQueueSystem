@@ -9,18 +9,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<QueueService>();
-builder.Services.AddHostedService<TicketHandoffEngine>();
+builder.Services.AddSingleton<TicketHandoffEngine>();
+builder.Services.AddHostedService<TicketHandoffEngine>(provider =>
+    provider.GetRequiredService<TicketHandoffEngine>());
 builder.Services.AddSignalR();
 
+var allowedOrigins = builder.Configuration.GetSection("AllowedCorsOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy
+            .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
     });
+});
+
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
 });
 
 var app = builder.Build();

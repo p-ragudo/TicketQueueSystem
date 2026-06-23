@@ -9,12 +9,14 @@ type SignalRContextType = {
 const SignalRContext = createContext<SignalRContextType>({connection: null, isConnected: false});
 
 export const SignalRProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+    const baseApiUrl = import.meta.env.VITE_API_URL
+
     const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         const newConnection = new signalR.HubConnectionBuilder()
-            .withUrl("http://localhost:5000/hubs/ticket-status")
+            .withUrl(`${baseApiUrl}/hubs/ticket-status`)
             .withAutomaticReconnect()
             .build()
         

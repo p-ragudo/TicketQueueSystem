@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.SignalR;
 using QueueServer.Common;
 using QueueServer.Dtos;
@@ -11,6 +10,7 @@ namespace QueueServer.Services;
 public class QueueService
 {
     public ConcurrentQueue<Ticket> Queue {get; } = new();
+    public List<Ticket> DoneTickets { get; } = new();
     private int _ticketCounter = 0;
     private readonly ILogger<WindowWorkerService> _logger;
     private readonly IHubContext<TicketStatusHub, ITicketStatusClient> _hubContext;
@@ -64,5 +64,10 @@ public class QueueService
         queueInfoDto.TotalWaiting = Queue.Count();
 
         await _hubContext.Clients.All.SendQueueStatus(queueInfoDto);
+    }
+
+    public void AddTicketToDoneList(Ticket ticket)
+    {
+        DoneTickets.Add(ticket);
     }
 }

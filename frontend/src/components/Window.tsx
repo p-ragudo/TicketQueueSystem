@@ -10,8 +10,8 @@ const Window = ({windowWorker, ticket}: WindowProp) => {
   const textColor = ticket === null ? 'text-green-500' : 'text-red-500'
 
   return (
-    <div className={`border-solid border-1 ${borderColor} rounded-sm w-40 h-40 flex flex-col text-center`}>
-      <p className={`w-full mt-1 border-b-1 border-solid pb-1 ${textColor}`}>Window {windowWorker.windowNumber}</p>
+    <div className={`border-solid border-2 ${borderColor} rounded-sm w-40 h-40 flex flex-col text-center`}>
+      <p className={`w-full mt-1 border-b-2 border-solid pb-1 ${textColor}`}>Window {windowWorker.windowNumber}</p>
       <div className={`h-full content-center ${textColor}`}>
         {ticket ? (
           <div>
