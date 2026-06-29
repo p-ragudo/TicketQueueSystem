@@ -51,9 +51,13 @@ dotnet run
 cd frontend
 npm install
 npm run dev
-or
-npm run dev:localnetwork to expose app within the same network
 ```
+
+or use:
+```bash
+npm run dev:localnetwork
+```
+for exposing app within the same netowrk
 
 SignalR hub connects automatically on frontend load.
 
