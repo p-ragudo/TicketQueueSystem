@@ -110,8 +110,8 @@ function App() {
   }
 
   return (
-    <div className='p-5 flex flex-col gap-10'>
-      <div className='flex justify-around'>
+    <div className='p-5 flex flex-col gap-10 mx-30'>
+      <div className='flex justify-between'>
         {windowWorkers.map(windowWorker => {
           const ticket = windowWorker.currentTicket
 
@@ -129,7 +129,7 @@ function App() {
       <div className='w-full text-center'>
         <button 
           onClick={handleRequestTicket}
-          className='px-10 py-2'
+          className='px-10 py-2 bg-green-700 text-white rounded-md w-full'
         >
           Request Ticket
         </button>
@@ -137,23 +137,24 @@ function App() {
 
       <div className='grid grid-cols-2 w-full justify-start'>
         <div className='mr-2.5'>
-          <div className='flex w-full border-solid border-1 justify-around'>
+          <div className='flex w-full border-solid border-1 justify-around mb-4'>
             <p>Queue</p>
             <p>Total Waiting: {totalWaiting}</p>
           </div>
           {queue.map(ticket => (
-            <div key={ticket.id}>
+            <div className='pl-16' key={ticket.id}>
               <p>{ticket.id}</p>
             </div>
           ))}
         </div>
 
-        <div className='border-solid border-1 ml-2.5'>
-          <p>Done</p>
+        <div>
+          <div className='flex w-full border-solid border-1 justify-around mb-4'>
+            <p>Done</p>
+            <p>Total Done: {completedTickets.length}</p>
+          </div>
           {completedTickets.map(ticket => (
-            <div>
-              <p>{ticket.id}</p>
-            </div>
+            <p className='pl-16'>{ticket.id}</p>
           ))}
         </div>
       </div>

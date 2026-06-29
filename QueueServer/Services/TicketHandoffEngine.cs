@@ -27,6 +27,7 @@ public class TicketHandoffEngine : BackgroundService
             new WindowWorkerService(WindowWorker.Create(windowNumber: 3), _windowWorkerLogger, hubContext, _schedulerService)
         ];
     }
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _handoffEngineLogger.LogInformation("Handoff engine started. Monitoring queue...");
